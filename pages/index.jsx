@@ -1,26 +1,33 @@
-import { useEffect, useState } from 'react';
-import { Button, Card, Spinner } from 'flowbite-react';
-import DashboardTable from '@/components/DashboardTable';
-import SubmissionModal from '@/components/SubmissionModal';
+import { useEffect, useState } from "react";
+import { Button, Card, Spinner } from "flowbite-react";
+import DashboardTable from "@/components/DashboardTable";
+import SubmissionModal from "@/components/SubmissionModal";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 
 export default function HomePage() {
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
 
   const fetchSummary = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const response = await fetch(`${API_BASE}/analytics/summary/`);
-      if (!response.ok) throw new Error('Unable to load analytics data');
-      const data = await response.json();
-      setSummary(data);
-      setRecent(data.recent || []);
+      // Fetch snapshot data
+      const snapshotResponse = await fetch(`${API_BASE}/snapshot/`);
+      if (!snapshotResponse.ok) throw new Error("Unable to load analytics data");
+      const snapshotData = await snapshotResponse.json();
+      setSummary(snapshotData);
+
+      // Fetch recent bot events
+      const recentResponse = await fetch(`${API_BASE}/bot-events/`);
+      if (recentResponse.ok) {
+        const recentData = await recentResponse.json();
+        setRecent(recentData.results || []);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -33,10 +40,13 @@ export default function HomePage() {
   }, []);
 
   const summaryMetrics = [
-    { label: 'Total submissions', value: summary?.total_submissions ?? '—' },
-    { label: 'Honeypot hits', value: summary?.honeypot_hits ?? '—' },
-    { label: 'Unique IPs', value: summary?.unique_ips ?? '—' }
+    { label: "Total Events", value: summary?.total_events ?? "—" },
+    { label: "Injection Attempts", value: summary?.total_injection_attempts ?? "—" },
+    { label: "Unique IPs", value: summary?.total_ips ?? "—" },
   ];
+  // this is a data structure like this:
+  // { "attack_category_snapshot":[{"category":"SQL Injection","total_count":1,"most_popular_paths":[{"request_path":"/api/bot-events/","path_count":1}]}]}
+  const attackCategorySnapshot = summary?.attack_category_snapshot ?? [];
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-6">
@@ -56,11 +66,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-          {error}
-        </div>
-      )}
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>}
 
       {!loading && !error && (
         <>
