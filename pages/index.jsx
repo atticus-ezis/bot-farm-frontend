@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Button, Card, Spinner } from "flowbite-react";
 import DashboardTable from "@/components/DashboardTable";
 import SubmissionModal from "@/components/SubmissionModal";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+import { SNAPSHOT_URL, BOT_EVENTS_URL } from "@/config/api";
+import Link from "next/link";
 
 export default function HomePage() {
   const [summary, setSummary] = useState(null);
@@ -16,16 +16,19 @@ export default function HomePage() {
     setLoading(true);
     setError("");
     try {
+      // parrallel fetch snapshot
+      const [snapshotResponse, botEvents] = await Promise.all([fetch(SNAPSHOT_URL), fetch(BOT_EVENTS_URL)]);
       // Fetch snapshot data
-      const snapshotResponse = await fetch(`${API_BASE}/snapshot/`);
+      console.log({ snapshotResponse });
       if (!snapshotResponse.ok) throw new Error("Unable to load analytics data");
       const snapshotData = await snapshotResponse.json();
       setSummary(snapshotData);
 
       // Fetch recent bot events
-      const recentResponse = await fetch(`${API_BASE}/bot-events/`);
-      if (recentResponse.ok) {
-        const recentData = await recentResponse.json();
+      if (botEvents.ok) {
+        const recentData = await botEvents.json();
+        console.log("Recent bot events response:", recentData);
+        console.log("Recent bot events count:", recentData.results?.length || 0);
         setRecent(recentData.results || []);
       }
     } catch (err) {
@@ -44,9 +47,24 @@ export default function HomePage() {
     { label: "Injection Attempts", value: summary?.total_injection_attempts ?? "—" },
     { label: "Unique IPs", value: summary?.total_ips ?? "—" },
   ];
-  // this is a data structure like this:
-  // { "attack_category_snapshot":[{"category":"SQL Injection","total_count":1,"most_popular_paths":[{"request_path":"/api/bot-events/","path_count":1}]}]}
-  const attackCategorySnapshot = summary?.attack_category_snapshot ?? [];
+
+  console.log("Summary data:", summary);
+  console.log("Recent submissions:", recent);
+  console.log(
+    "Recent submissions details:",
+    recent.map((item) => ({
+      id: item.id,
+      created_at: item.created_at,
+      ip_address: item.ip_address,
+      method: item.method,
+      request_path: item.request_path,
+      attack_attempted: item.attack_attempted,
+      attack_count: item.attack_count,
+      attack_categories: item.attack_categories,
+    }))
+  );
+
+  const attackCategorySnapshot = summary?.attack_category_snapshot ?? "-";
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-6">
@@ -77,12 +95,28 @@ export default function HomePage() {
                 <p className="text-3xl font-semibold">{metric.value}</p>
               </Card>
             ))}
+
+            {attackCategorySnapshot?.map((category, index) => (
+              <Card key={index}>
+                <p className="text-xs uppercase text-slate-500">{category.category}</p>
+                <p className="text-3xl font-semibold">{category.total_count}</p>
+
+                {category?.most_popular_paths?.map((path, index) => (
+                  <p key={index}>{path.request_path}</p>
+                ))}
+              </Card>
+            ))}
           </section>
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold">Recent submissions</h2>
+                <Link href="/bot-event-list">
+                  <h2 className="text-xl font-semibold">Recent submissions</h2>
+                </Link>
+                <Link href="/attack-list">
+                  <h2 className="text-xl font-semibold">List of Attacks</h2>
+                </Link>
                 <p className="text-sm text-slate-500">
                   Showing up to {recent.length} most recent events. Tags are sanitized and no raw HTML is rendered.
                 </p>
