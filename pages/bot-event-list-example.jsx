@@ -26,6 +26,7 @@ export default function BotEventListExample() {
   const columns = [
     { label: "Timestamp", key: "created_at", type: "date" },
     { label: "IP Address", key: "ip_address" },
+
     { label: "Browser", key: "agent_snapshot" },
     { label: "Location", key: "geo_location" },
     { label: "Activity", key: "event_category" },
@@ -34,6 +35,7 @@ export default function BotEventListExample() {
 
     { label: "Attack Categories", key: "attack_categories" },
     { label: "Attack Count", key: "attack_count" },
+    { label: "Email", key: "email" },
   ];
 
   const orderingOptions = [
@@ -91,7 +93,7 @@ export default function BotEventListExample() {
       orderingOptions={orderingOptions}
       title="All Bot Events"
       description="Browse all bot submission events with pagination"
-      searchPlaceholder="Search by IP, location, path..."
+      searchPlaceholder="Search by IP, Email, location, path..."
       emptyMessage="No bot events found."
       loadingMessage="Loading bot events…"
       defaultOrdering="-created_at"

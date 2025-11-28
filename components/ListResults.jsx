@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/router";
 import { Table, Button, Card, Spinner, Badge, TextInput, Pagination, Select, Modal } from "flowbite-react";
 import { extractPageNumber } from "@/utils/helper";
 import DetailComponent from "@/components/DetailComponent";
@@ -19,6 +20,10 @@ export default function ListResults({
   detailFields = null,
   useDetailView = true,
   customHandleRowClick = null,
+  hideSearch = false,
+  hidePagination = false,
+  hideHeader = false,
+  compact = false,
 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,7 @@ export default function ListResults({
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
+  const router = useRouter();
 
   // Create detail component instance from configuration
   const DetailComponentInstance = useMemo(() => {
@@ -172,6 +178,43 @@ export default function ListResults({
     fetchData(url);
   };
 
+  const handleRefresh = () => {
+    // Reset all filters to default values
+    const resetFilters = {};
+    filters.forEach((filter) => {
+      resetFilters[filter.key] = filter.defaultValue || "";
+    });
+    setFilterValues(resetFilters);
+    setSearchQuery("");
+    setOrdering(defaultOrdering);
+
+    // Clear URL query parameters by navigating to the same page without query params
+    if (typeof window !== "undefined") {
+      const currentPath = window.location.pathname;
+      router.replace(currentPath, undefined, { shallow: true });
+    }
+
+    // Fetch fresh data with only additionalParams that are not from URL (like page_size)
+    // Filter out URL-based params (ip_address, exact_request_path, request_path, etc.)
+    const urlBasedParams = ["ip_address", "exact_request_path", "request_path"];
+    const cleanAdditionalParams = {};
+    Object.entries(additionalParams).forEach(([key, value]) => {
+      // Only keep params that are not URL-based (like page_size)
+      if (!urlBasedParams.includes(key)) {
+        cleanAdditionalParams[key] = value;
+      }
+    });
+
+    const url = buildUrl({
+      page: null,
+      search: null,
+      orderBy: defaultOrdering,
+      filterParams: {},
+      additional: cleanAdditionalParams,
+    });
+    fetchData(url);
+  };
+
   const fetchDetailData = async (url) => {
     setDetailLoading(true);
     setDetailError(null);
@@ -276,89 +319,109 @@ export default function ListResults({
   }, []);
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="text-slate-600">{description}</p>
-      </header>
+    <main className={compact ? "space-y-6" : "mx-auto max-w-7xl space-y-6 p-6"}>
+      {!hideHeader && (
+        <header className="space-y-2">
+          <h1 className="text-3xl font-bold">{title}</h1>
+          <p className="text-slate-600">{description}</p>
+        </header>
+      )}
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>}
 
       {/* search and filters */}
-      <Card>
-        <div className="space-y-4">
-          {/* search */}
-          <form onSubmit={handleSearchSubmit} className="flex gap-2">
-            <TextInput
-              type="text"
-              name="search"
-              placeholder={searchPlaceholder}
-              className="flex-1"
-              defaultValue={searchQuery}
-            />
-            <Button type="submit" color="blue">
-              Search
-            </Button>
-          </form>
+      {(filters.length > 0 || orderingOptions.length > 0 || !hideSearch) && (
+        <Card>
+          <div className="space-y-4">
+            {/* search */}
+            {!hideSearch && (
+              <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                <TextInput
+                  type="text"
+                  name="search"
+                  placeholder={searchPlaceholder}
+                  className="flex-1"
+                  defaultValue={searchQuery}
+                />
+                <Button type="submit" color="blue">
+                  Search
+                </Button>
+                <Button onClick={handleRefresh} color="light" outline>
+                  Refresh
+                </Button>
+              </form>
+            )}
 
-          {/* Filters */}
-          {filters.length > 0 && (
-            <div className="flex flex-wrap items-center gap-4">
-              {filters.map((filter) => (
-                <div key={filter.key} className="flex items-center gap-2 min-w-0 flex-shrink-0">
-                  <label htmlFor={filter.key} className="text-sm font-medium text-slate-700 whitespace-nowrap">
-                    {filter.label}:
-                  </label>
-                  <Select
-                    id={filter.key}
-                    value={filterValues[filter.key] || ""}
-                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                    className="w-48 flex-shrink-0"
-                  >
-                    {filter.options.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              ))}
-            </div>
-          )}
+            {/* Refresh button when search is hidden but filters/ordering exist */}
+            {hideSearch && (filters.length > 0 || orderingOptions.length > 0) && (
+              <div className="flex justify-end">
+                <Button onClick={handleRefresh} color="light" outline>
+                  Refresh
+                </Button>
+              </div>
+            )}
 
-          {/* Ordering - Bottom row */}
-          {orderingOptions.length > 0 && (
-            <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
-              <label htmlFor="ordering" className="text-sm font-medium text-slate-700 whitespace-nowrap">
-                Sort by:
-              </label>
-              <Select
-                id="ordering"
-                value={ordering}
-                onChange={(e) => handleOrderingChange(e.target.value)}
-                className="w-48"
-              >
-                {orderingOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+            {/* Filters */}
+            {filters.length > 0 && (
+              <div className="flex flex-wrap items-center gap-4">
+                {filters.map((filter) => (
+                  <div key={filter.key} className="flex items-center gap-2 min-w-0 flex-shrink-0">
+                    <label htmlFor={filter.key} className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                      {filter.label}:
+                    </label>
+                    <Select
+                      id={filter.key}
+                      value={filterValues[filter.key] || ""}
+                      onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                      className="w-48 flex-shrink-0"
+                    >
+                      {filter.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 ))}
-              </Select>
-            </div>
-          )}
-        </div>
-      </Card>
+              </div>
+            )}
+
+            {/* Ordering - Bottom row */}
+            {orderingOptions.length > 0 && (
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                <label htmlFor="ordering" className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                  Sort by:
+                </label>
+                <Select
+                  id="ordering"
+                  value={ordering}
+                  onChange={(e) => handleOrderingChange(e.target.value)}
+                  className="w-48"
+                >
+                  {orderingOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
       {/* pagination info */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Badge color="purple" size="lg">
-            Total: {pagination.count}
-          </Badge>
-          <span className="text-sm text-slate-600">
-            Page {pagination.currentPage} of {totalPages || 1}
-          </span>
+      {!hidePagination && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Badge color="purple" size="lg">
+              Total: {pagination.count}
+            </Badge>
+            <span className="text-sm text-slate-600">
+              Page {pagination.currentPage} of {totalPages || 1}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Table */}
       {loading ? (
@@ -367,44 +430,93 @@ export default function ListResults({
           <p className="text-sm text-slate-500">{loadingMessage}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-white shadow">
-          <Table hoverable>
-            <Table.Head>
-              {columns.map((column, index) => (
-                <Table.HeadCell key={column.key || index}>{column.label}</Table.HeadCell>
-              ))}
-            </Table.Head>
-            <Table.Body className="divide-y">
-              {data.map((row) => (
-                <Table.Row
-                  key={row.id || Math.random()}
-                  className={
-                    isRowClickable() ? "bg-white hover:bg-gray-50 cursor-pointer" : "bg-white hover:bg-gray-50"
-                  }
-                  onClick={() => defaultHandleRowClick(row)}
-                >
+        <>
+          <div
+            className={`rounded-lg border bg-white shadow ${
+              compact ? "overflow-hidden flex flex-col max-h-[300px]" : "overflow-x-auto"
+            }`}
+          >
+            {compact ? (
+              <>
+                <div className="overflow-x-auto flex-shrink-0 border-b">
+                  <Table>
+                    <Table.Head>
+                      {columns.map((column, index) => (
+                        <Table.HeadCell key={column.key || index}>{column.label}</Table.HeadCell>
+                      ))}
+                    </Table.Head>
+                  </Table>
+                </div>
+                <div className="overflow-y-auto overflow-x-auto flex-1">
+                  {data.length === 0 ? (
+                    <p className="p-4 text-center text-sm text-slate-500">{emptyMessage}</p>
+                  ) : (
+                    <Table hoverable>
+                      <Table.Body className="divide-y">
+                        {data.map((row) => (
+                          <Table.Row
+                            key={row.id || Math.random()}
+                            className={
+                              isRowClickable()
+                                ? "bg-white hover:bg-gray-50 cursor-pointer"
+                                : "bg-white hover:bg-gray-50"
+                            }
+                            onClick={() => defaultHandleRowClick(row)}
+                          >
+                            {columns.map((column, index) => (
+                              <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
+                                {renderCell(row, column)}
+                              </Table.Cell>
+                            ))}
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Table hoverable>
+                <Table.Head>
                   {columns.map((column, index) => (
-                    <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
-                      {renderCell(row, column)}
-                    </Table.Cell>
+                    <Table.HeadCell key={column.key || index}>{column.label}</Table.HeadCell>
                   ))}
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-          {data.length === 0 && <p className="p-4 text-center text-sm text-slate-500">{emptyMessage}</p>}
-          <Card>
-            {/* pagination */}
-            <div className="flex flex-col justify-center sm:flex-row items-center gap-4">
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={totalPages || 1}
-                onPageChange={handlePageChange}
-                showIcons
-              />
-            </div>
-          </Card>
-        </div>
+                </Table.Head>
+                <Table.Body className="divide-y">
+                  {data.map((row) => (
+                    <Table.Row
+                      key={row.id || Math.random()}
+                      className={
+                        isRowClickable() ? "bg-white hover:bg-gray-50 cursor-pointer" : "bg-white hover:bg-gray-50"
+                      }
+                      onClick={() => defaultHandleRowClick(row)}
+                    >
+                      {columns.map((column, index) => (
+                        <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
+                          {renderCell(row, column)}
+                        </Table.Cell>
+                      ))}
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table>
+            )}
+            {!compact && data.length === 0 && <p className="p-4 text-center text-sm text-slate-500">{emptyMessage}</p>}
+          </div>
+          {!hidePagination && (
+            <Card>
+              {/* pagination */}
+              <div className="flex flex-col justify-center sm:flex-row items-center gap-4">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={totalPages || 1}
+                  onPageChange={handlePageChange}
+                  showIcons
+                />
+              </div>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Detail Modal */}
