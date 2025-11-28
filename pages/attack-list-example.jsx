@@ -1,4 +1,5 @@
 import ListResults from "@/components/ListResults";
+import { attackCategoryFilter } from "@/config/filters";
 import { ATTACK_TYPES_URL } from "@/config/api";
 
 export default function AttackListExample() {
@@ -15,29 +16,24 @@ export default function AttackListExample() {
     { value: "created_at", label: "Oldest First" },
   ];
 
-  const filters = [
-    {
-      key: "category",
-      label: "Category",
-      defaultValue: "",
-      options: [
-        { value: "", label: "All" },
-        { value: "XSS", label: "XSS" },
-        { value: "SQLI", label: "SQL Injection" },
-        { value: "LFI", label: "LFI" },
-        { value: "CMD", label: "CMD" },
-        { value: "TRAVERSAL", label: "TRAVERSAL" },
-        { value: "SSTI", label: "SSTI" },
-        { value: "Other", label: "Other" },
-      ],
-    },
+  const detailComponentInfo = [
+    { value: "created_at", label: "Timestamp" },
+    { value: "category", label: "Category" },
+    { value: "pattern", label: "Pattern" },
+    { value: "request_path", label: "Request Path" },
+    { value: "target_field", label: "Target Field" },
+    { value: "raw_value", label: "Injection value" },
+    { value: "full_value", label: "Full Value" },
   ];
+
+  const filters = [attackCategoryFilter];
 
   return (
     <ListResults
       baseUrl={ATTACK_TYPES_URL}
       columns={columns}
       orderingOptions={orderingOptions}
+      detailFields={detailComponentInfo}
       filters={filters}
       title="All Attacks"
       description="Browse all Attacks with pagination"

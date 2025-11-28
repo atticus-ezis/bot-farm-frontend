@@ -17,6 +17,8 @@ export default function ListResults({
   customCellRenderers = {},
   additionalParams = {},
   detailFields = null,
+  useDetailView = true,
+  customHandleRowClick = null,
 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -194,22 +196,33 @@ export default function ListResults({
     }
   };
 
-  const handleDetail = (row, url = null) => {
-    if (DetailComponentInstance) {
+  // Helper to determine if row should be clickable (for styling)
+  const isRowClickable = () => {
+    return (useDetailView && detailFields) || customHandleRowClick;
+  };
+
+  // Central command for row click - handles all cases
+  const defaultHandleRowClick = (row) => {
+    // If custom handler is provided, use it (overrides default behavior)
+    if (customHandleRowClick) {
+      customHandleRowClick(row);
+      return;
+    }
+
+    // If detail view is disabled, do nothing
+    if (useDetailView === false) {
+      return;
+    }
+
+    // Default behavior: show detail modal if detailFields are provided
+    if (useDetailView && DetailComponentInstance) {
       setSelectedRow(row);
       setIsModalOpen(true);
-      setDetailData(null); // Clear previous data
+      setDetailData(null);
 
-      // Fetch detail data from URL
-      // Handle trailing slash: baseUrl might already have one
       const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      const detailUrl = url || `${base}/${row.id}/`;
+      const detailUrl = `${base}/${row.id}/`;
       fetchDetailData(detailUrl);
-    } else {
-      // Fallback to navigation if no detail fields provided
-      const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      const detailUrl = url || `${base}/${row.id}/`;
-      window.location.href = detailUrl;
     }
   };
 
@@ -221,6 +234,10 @@ export default function ListResults({
   };
 
   const renderCell = (row, column) => {
+    // Check if column has a custom render function
+    if (column.render && typeof column.render === "function") {
+      return column.render(row);
+    }
     // Check if there's a custom renderer for this column
     if (customCellRenderers[column.key]) {
       return customCellRenderers[column.key](row, column);
@@ -361,8 +378,10 @@ export default function ListResults({
               {data.map((row) => (
                 <Table.Row
                   key={row.id || Math.random()}
-                  className="bg-white hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleDetail(row, `${baseUrl}${row.id}/`)}
+                  className={
+                    isRowClickable() ? "bg-white hover:bg-gray-50 cursor-pointer" : "bg-white hover:bg-gray-50"
+                  }
+                  onClick={() => defaultHandleRowClick(row)}
                 >
                   {columns.map((column, index) => (
                     <Table.Cell key={column.key || index} className={column.cellClassName || ""}>

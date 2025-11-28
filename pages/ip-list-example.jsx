@@ -1,9 +1,28 @@
 import ListResults from "@/components/ListResults";
 import { AGGREGATE_IPS_URL } from "@/config/api";
 
+const ipRedirect = (ip_address) => {
+  // Navigate to bot-event-list-example page with IP address filter
+  window.location.href = `/bot-event-list-example?ip_address=${encodeURIComponent(ip_address)}`;
+};
+
 export default function IPListExample() {
   const columns = [
-    { label: "IP Address", key: "ip_address" },
+    {
+      label: "IP Address",
+      key: "ip_address",
+      render: (row) => (
+        <span
+          className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent row click
+            ipRedirect(row.ip_address);
+          }}
+        >
+          {row.ip_address}
+        </span>
+      ),
+    },
     { label: "Location", key: "geo_location" },
     { label: "Language", key: "language" },
     { label: "Referer", key: "referer", cellClassName: "max-w-xs truncate" },
@@ -20,12 +39,12 @@ export default function IPListExample() {
   ];
 
   const orderingOptions = [
+    { value: "-traffic_count", label: "Total Hits" },
+    { value: "-attack_count", label: "Attack Count" },
+    { value: "-spam_count", label: "Spam Count" },
+    { value: "-scan_count", label: "Scan Count" },
     { value: "-created_at", label: "Newest First" },
     { value: "created_at", label: "Oldest First" },
-    { value: "-traffic_count", label: "Total Hits" },
-    { value: "-scan_count", label: "Scan Count" },
-    { value: "-spam_count", label: "Spam Count" },
-    { value: "-attack_count", label: "Attack Count" },
   ];
 
   return (
@@ -38,7 +57,8 @@ export default function IPListExample() {
       searchPlaceholder="Search by IP, email, location..."
       emptyMessage="No IP addresses found."
       loadingMessage="Loading IP list..."
-      defaultOrdering="-created_at"
+      defaultOrdering="-traffic_count"
+      useDetailView={false}
     />
   );
 }

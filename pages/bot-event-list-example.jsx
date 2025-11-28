@@ -1,14 +1,34 @@
+import { useState } from "react";
 import ListResults from "@/components/ListResults";
 import { BOT_EVENTS_URL } from "@/config/api";
-import { attackCategoryFilter, methodFilter, attackAttemptedFilter } from "@/config/filters";
+import { attackCategoryFilter, methodFilter, attackAttemptedFilter, botEventTypeFilter } from "@/config/filters";
 import { Badge } from "flowbite-react";
 
 export default function BotEventListExample() {
+  // Read query parameters from URL to support filtering from other pages
+  // Initialize synchronously if on client side to ensure filter is applied on first render
+  const getInitialParams = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ipAddress = params.get("ip_address");
+      if (ipAddress) {
+        return { ip_address: ipAddress };
+      }
+      const requestPath = params.get("exact_request_path");
+      if (requestPath) {
+        return { request_path: requestPath };
+      }
+    }
+    return {};
+  };
+
+  const [initialParams] = useState(getInitialParams);
   const columns = [
     { label: "Timestamp", key: "created_at", type: "date" },
     { label: "IP Address", key: "ip_address" },
     { label: "Browser", key: "agent_snapshot" },
     { label: "Location", key: "geo_location" },
+    { label: "Activity", key: "event_category" },
     { label: "Path", key: "request_path" },
     { label: "Method", key: "method" },
 
@@ -42,7 +62,7 @@ export default function BotEventListExample() {
   ];
 
   // Filters imported from config
-  const filters = [attackCategoryFilter, methodFilter, attackAttemptedFilter];
+  const filters = [attackCategoryFilter, methodFilter, botEventTypeFilter];
 
   // Custom renderer for attack categories (shows badges)
   const customCellRenderers = {
@@ -71,12 +91,13 @@ export default function BotEventListExample() {
       orderingOptions={orderingOptions}
       title="All Bot Events"
       description="Browse all bot submission events with pagination"
-      searchPlaceholder="Search by IP, email, path..."
+      searchPlaceholder="Search by IP, location, path..."
       emptyMessage="No bot events found."
       loadingMessage="Loading bot events…"
       defaultOrdering="-created_at"
       customCellRenderers={customCellRenderers}
       detailFields={detailComponentInfo}
+      additionalParams={initialParams}
     />
   );
 }

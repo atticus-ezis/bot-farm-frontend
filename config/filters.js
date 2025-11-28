@@ -41,4 +41,16 @@ export const attackAttemptedFilter = {
   ],
 };
 
+export const botEventTypeFilter = {
+  label: "Bot Activity",
+  key: "event_category",
+  defaultValue: "",
+  options: [
+    { value: "", label: "All" },
+    { value: "attack", label: "Attack" },
+    { value: "spam", label: "Spam" },
+    { value: "scan", label: "Scan" },
+  ],
+};
+
 // Pre-configured filter arrays for common use cases
