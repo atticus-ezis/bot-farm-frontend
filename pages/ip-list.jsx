@@ -2,8 +2,8 @@ import ListResults from "@/components/ListResults";
 import { AGGREGATE_IPS_URL } from "@/config/api";
 
 const ipRedirect = (ip_address) => {
-  // Navigate to bot-event-list-example page with IP address filter
-  window.location.href = `/bot-event-list-example?ip_address=${encodeURIComponent(ip_address)}`;
+  // Navigate to bot-event-list page with IP address filter
+  window.location.href = `/bot-event-list?ip_address=${encodeURIComponent(ip_address)}`;
 };
 
 export default function IPListExample() {

@@ -24,7 +24,7 @@ export default function PathListExample() {
   //   {BOT_EVENT_URL}/?request_path={row.request_path}
 
   const customHandleRowClick = (row) => {
-    window.location.href = `/bot-event-list-example?exact_request_path=${encodeURIComponent(row.request_path)}`;
+    window.location.href = `/bot-event-list?exact_request_path=${encodeURIComponent(row.request_path)}`;
   };
 
   return (

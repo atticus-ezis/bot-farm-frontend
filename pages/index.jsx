@@ -4,7 +4,7 @@ import ListResults from "@/components/ListResults";
 import { SNAPSHOT_URL, BOT_EVENTS_URL, AGGREGATE_IPS_URL, AGGREGATE_PATHS_URL } from "@/config/api";
 import Link from "next/link";
 
-// Reuse the same detailComponentInfo from bot-event-list-example
+// Reuse the same detailComponentInfo from bot-event-list
 const detailComponentInfo = [
   { value: "created_at", label: "Timestamp" },
   { value: "ip_address", label: "IP Address" },
@@ -49,7 +49,7 @@ export default function HomePage() {
     { label: "From Unique IPs", value: summary?.total_ips ?? "—" },
   ];
 
-  // Event columns matching bot-event-list-example
+  // Event columns matching bot-event-list
   const eventColumns = [
     { label: "Timestamp", key: "created_at", type: "date" },
     { label: "IP Address", key: "ip_address" },
@@ -62,7 +62,7 @@ export default function HomePage() {
     { label: "Attack Count", key: "attack_count" },
   ];
 
-  // Custom renderer for attack categories (matching bot-event-list-example)
+  // Custom renderer for attack categories (matching bot-event-list)
   const eventCustomCellRenderers = {
     attack_categories: (row) => {
       const categories = row.attack_categories;
@@ -81,7 +81,7 @@ export default function HomePage() {
     },
   };
 
-  // Path columns matching path-list-example
+  // Path columns matching path-list
   const pathColumns = [
     { label: "Path", key: "request_path" },
     { label: "Traffic Count", key: "traffic_count" },
@@ -92,12 +92,12 @@ export default function HomePage() {
     { label: "Attacks Found", key: "attacks_used" },
   ];
 
-  // Path row click handler (matching path-list-example)
+  // Path row click handler (matching path-list)
   const pathCustomHandleRowClick = (row) => {
-    window.location.href = `/bot-event-list-example?exact_request_path=${encodeURIComponent(row.request_path)}`;
+    window.location.href = `/bot-event-list?exact_request_path=${encodeURIComponent(row.request_path)}`;
   };
 
-  // IP columns matching ip-list-example
+  // IP columns matching ip-list
   const ipColumns = [
     {
       label: "IP Address",
@@ -107,7 +107,7 @@ export default function HomePage() {
           className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
           onClick={(e) => {
             e.stopPropagation(); // Prevent row click
-            window.location.href = `/bot-event-list-example?ip_address=${encodeURIComponent(row.ip_address)}`;
+            window.location.href = `/bot-event-list?ip_address=${encodeURIComponent(row.ip_address)}`;
           }}
         >
           {row.ip_address}
@@ -132,8 +132,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-6">
       <header className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Bot Analytics</p>
-        <h1 className="text-3xl font-bold">Live bot submission telemetry</h1>
+        <h1 className="text-3xl font-bold">Real Bot Traffic</h1>
         <p className="text-slate-600">Everything that spam bots submit to our urls.</p>
         <Button color="light" onClick={fetchSummary} outline>
           Refresh
@@ -198,7 +197,7 @@ export default function HomePage() {
             </div>
 
             <Card>
-              <Link href="/bot-event-list-example">
+              <Link href="/bot-event-list">
                 <h2 className="text-xl font-semibold mb-4 hover:text-blue-600 cursor-pointer">Recent submissions</h2>
               </Link>
               <ListResults
@@ -221,8 +220,8 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <Link href="/path-list-example">
-                <h2 className="text-xl font-semibold mb-4 hover:text-blue-600 cursor-pointer">Paths</h2>
+              <Link href="/path-list">
+                <h2 className="text-xl font-semibold mb-4 hover:text-blue-600 cursor-pointer">High Risk URLs</h2>
               </Link>
               <ListResults
                 baseUrl={AGGREGATE_PATHS_URL}
@@ -243,8 +242,8 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <Link href="/ip-list-example">
-                <h2 className="text-xl font-semibold mb-4 hover:text-blue-600 cursor-pointer">IPs</h2>
+              <Link href="/ip-list">
+                <h2 className="text-xl font-semibold mb-4 hover:text-blue-600 cursor-pointer">High Risk IPs</h2>
               </Link>
               <ListResults
                 baseUrl={AGGREGATE_IPS_URL}

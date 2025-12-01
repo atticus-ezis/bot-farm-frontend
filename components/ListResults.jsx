@@ -433,48 +433,11 @@ export default function ListResults({
         <>
           <div
             className={`rounded-lg border bg-white shadow ${
-              compact ? "overflow-hidden flex flex-col max-h-[300px]" : "overflow-x-auto"
+              compact ? "max-h-[300px] overflow-auto" : "overflow-x-auto"
             }`}
           >
-            {compact ? (
-              <>
-                <div className="overflow-x-auto flex-shrink-0 border-b">
-                  <Table>
-                    <Table.Head>
-                      {columns.map((column, index) => (
-                        <Table.HeadCell key={column.key || index}>{column.label}</Table.HeadCell>
-                      ))}
-                    </Table.Head>
-                  </Table>
-                </div>
-                <div className="overflow-y-auto overflow-x-auto flex-1">
-                  {data.length === 0 ? (
-                    <p className="p-4 text-center text-sm text-slate-500">{emptyMessage}</p>
-                  ) : (
-                    <Table hoverable>
-                      <Table.Body className="divide-y">
-                        {data.map((row) => (
-                          <Table.Row
-                            key={row.id || Math.random()}
-                            className={
-                              isRowClickable()
-                                ? "bg-white hover:bg-gray-50 cursor-pointer"
-                                : "bg-white hover:bg-gray-50"
-                            }
-                            onClick={() => defaultHandleRowClick(row)}
-                          >
-                            {columns.map((column, index) => (
-                              <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
-                                {renderCell(row, column)}
-                              </Table.Cell>
-                            ))}
-                          </Table.Row>
-                        ))}
-                      </Table.Body>
-                    </Table>
-                  )}
-                </div>
-              </>
+            {data.length === 0 ? (
+              <p className="p-4 text-center text-sm text-slate-500">{emptyMessage}</p>
             ) : (
               <Table hoverable>
                 <Table.Head>
@@ -483,21 +446,24 @@ export default function ListResults({
                   ))}
                 </Table.Head>
                 <Table.Body className="divide-y">
-                  {data.map((row) => (
-                    <Table.Row
-                      key={row.id || Math.random()}
-                      className={
-                        isRowClickable() ? "bg-white hover:bg-gray-50 cursor-pointer" : "bg-white hover:bg-gray-50"
-                      }
-                      onClick={() => defaultHandleRowClick(row)}
-                    >
-                      {columns.map((column, index) => (
-                        <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
-                          {renderCell(row, column)}
-                        </Table.Cell>
-                      ))}
-                    </Table.Row>
-                  ))}
+                  {data.map((row) => {
+                    const hasAttack = row.attack_attempted === true || (row.attack_count && row.attack_count > 0);
+                    return (
+                      <Table.Row
+                        key={row.id || Math.random()}
+                        className={`${
+                          isRowClickable() ? "bg-white hover:bg-gray-50 cursor-pointer" : "bg-white hover:bg-gray-50"
+                        } ${hasAttack ? "border-l-4 border-red-500" : ""}`}
+                        onClick={() => defaultHandleRowClick(row)}
+                      >
+                        {columns.map((column, index) => (
+                          <Table.Cell key={column.key || index} className={column.cellClassName || ""}>
+                            {renderCell(row, column)}
+                          </Table.Cell>
+                        ))}
+                      </Table.Row>
+                    );
+                  })}
                 </Table.Body>
               </Table>
             )}
