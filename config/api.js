@@ -1,4 +1,4 @@
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL + "/api";
 export const SNAPSHOT_URL = `${BASE_URL}/snapshot/`;
 export const AGGREGATE_PATHS_URL = `${BASE_URL}/aggregate-paths/`;
 export const AGGREGATE_IPS_URL = `${BASE_URL}/aggregate-ips/`;
