@@ -5,3 +5,18 @@
 body {
   @apply bg-slate-50 text-slate-800;
 }
+.fixed.inset-0[aria-hidden="true"],
+.fixed.inset-0.bg-gray-900,
+div[class*="fixed"][class*="inset-0"][class*="bg-gray"],
+div[class*="fixed"][class*="inset-0"][class*="z-40"],
+[data-testid="modal-backdrop"],
+[id*="modal-backdrop"] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Also target any backdrop that appears when modal is open */
+body:has([role="dialog"]) .fixed.inset-0 {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
