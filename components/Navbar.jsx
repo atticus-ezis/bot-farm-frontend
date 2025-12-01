@@ -7,10 +7,10 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Dashboard" },
-    { href: "/bot-event-list-example", label: "Bot Events" },
-    { href: "/ip-list-example", label: "IP Addresses" },
-    { href: "/path-list-example", label: "Paths" },
-    { href: "/attack-list-example", label: "Attacks" },
+    { href: "/bot-event-list", label: "Bot Events" },
+    { href: "/ip-list", label: "IP Addresses" },
+    { href: "/path-list", label: "Paths" },
+    { href: "/attack-list", label: "Attacks" },
   ];
 
   return (
