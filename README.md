@@ -2,6 +2,8 @@
 
 A Next.js-based frontend application for visualizing bot submission analytics and managing honeypot data.
 
+Domain: https://bot-farm-frontend.vercel.app/
+
 ## Tech Stack
 
 - **Next.js 14** (Pages Router)
