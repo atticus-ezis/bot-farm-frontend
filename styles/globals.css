@@ -20,3 +20,13 @@ div[class*="fixed"][class*="inset-0"][class*="z-40"],
 body:has([role="dialog"]) .fixed.inset-0 {
   background-color: rgba(0, 0, 0, 0.5) !important;
 }
+
+/* Honeypot elements - invisible to humans but visible in HTML for bots */
+.honeypot-stealth {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+}

@@ -1,28 +1,20 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Spinner, Badge } from "flowbite-react";
 import ListResults from "@/components/ListResults";
+import { HONEYPOT_URLS } from "@/config/honeypot_urls";
 import { SNAPSHOT_URL, BOT_EVENTS_URL, AGGREGATE_IPS_URL, AGGREGATE_PATHS_URL } from "@/config/api";
+import { botEventColumns, pathColumns, ipColumns, detailComponentInfo } from "@/config/columns";
 import Link from "next/link";
 
-// Reuse the same detailComponentInfo from bot-event-list
-const detailComponentInfo = [
-  { value: "created_at", label: "Timestamp" },
-  { value: "ip_address", label: "IP Address" },
-  { value: "email", label: "Email" },
-  { value: "agent", label: "Browser" },
-  { value: "geo_location", label: "Location" },
-  { value: "language", label: "Language" },
-  { value: "referer", label: "Referer" },
-  { value: "request_path", label: "Path" },
-  { value: "method", label: "Method" },
-  { value: "target_fields", label: "Target Fields" },
-  { value: "data_details", label: "Data Present", type: "json" },
-];
+const backend_url = process.env.NEXT_PUBLIC_API_URL;
+
+console.log("This is the backend url: ", backend_url);
 
 export default function HomePage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -49,19 +41,6 @@ export default function HomePage() {
     { label: "From Unique IPs", value: summary?.total_ips ?? "—" },
   ];
 
-  // Event columns matching bot-event-list
-  const eventColumns = [
-    { label: "Timestamp", key: "created_at", type: "date" },
-    { label: "IP Address", key: "ip_address" },
-    { label: "Browser", key: "agent_snapshot" },
-    { label: "Location", key: "geo_location" },
-    { label: "Activity", key: "event_category" },
-    { label: "Path", key: "request_path" },
-    { label: "Method", key: "method" },
-    { label: "Attack Categories", key: "attack_categories" },
-    { label: "Attack Count", key: "attack_count" },
-  ];
-
   // Custom renderer for attack categories (matching bot-event-list)
   const eventCustomCellRenderers = {
     attack_categories: (row) => {
@@ -81,53 +60,41 @@ export default function HomePage() {
     },
   };
 
-  // Path columns matching path-list
-  const pathColumns = [
-    { label: "Path", key: "request_path" },
-    { label: "Traffic Count", key: "traffic_count" },
-    { label: "Attack Count", key: "attack_count" },
-    { label: "Spam Count", key: "spam_count" },
-    { label: "Scan Count", key: "scan_count" },
-    { label: "Most Popular Attack", key: "most_popular_attack" },
-    { label: "Attacks Found", key: "attacks_used" },
-  ];
+  // Path columns - using imported pathColumns from columns.js
 
   // Path row click handler (matching path-list)
   const pathCustomHandleRowClick = (row) => {
     window.location.href = `/bot-event-list?exact_request_path=${encodeURIComponent(row.request_path)}`;
   };
 
-  // IP columns matching ip-list
-  const ipColumns = [
-    {
-      label: "IP Address",
-      key: "ip_address",
-      render: (row) => (
-        <span
-          className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent row click
-            window.location.href = `/bot-event-list?ip_address=${encodeURIComponent(row.ip_address)}`;
-          }}
-        >
-          {row.ip_address}
-        </span>
-      ),
-    },
-    { label: "Location", key: "geo_location" },
-    { label: "Language", key: "language" },
-    { label: "Referer", key: "referer", cellClassName: "max-w-xs truncate" },
-    {
-      label: "Email",
-      key: "email",
-      accessor: (row) => (row.email && Array.isArray(row.email) ? row.email.join(", ") : "—"),
-      cellClassName: "max-w-xs truncate",
-    },
-    { label: "Traffic Count", key: "traffic_count" },
-    { label: "Scan Count", key: "scan_count" },
-    { label: "Spam Count", key: "spam_count" },
-    { label: "Attack Count", key: "attack_count" },
-  ];
+  // IP columns - using imported ipColumns from columns.js
+  const handleFakeSubmit = async (e, urlString) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(e.target);
+
+    // Always set error message immediately, regardless of fetch result
+    setErrors((prev) => {
+      const newErrors = {
+        ...prev,
+        [urlString]: "Wrong username or password",
+      };
+      console.log("Setting error for", urlString, newErrors);
+      return newErrors;
+    });
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${backendUrl}/${urlString}`, {
+        method: "POST",
+        body: formData,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    form.reset();
+  };
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-6">
@@ -202,7 +169,7 @@ export default function HomePage() {
               </Link>
               <ListResults
                 baseUrl={BOT_EVENTS_URL}
-                columns={eventColumns}
+                columns={botEventColumns}
                 orderingOptions={[]}
                 filters={[]}
                 title="Events"
@@ -265,6 +232,56 @@ export default function HomePage() {
           </section>
         </>
       )}
+      {/* Honeypot forms only target specific urls,
+      if url includes "contact", 
+       */}
+      <div className="flex flex-wrap gap-2 honeypot-stealth">
+        {HONEYPOT_URLS.map((url) => {
+          const urlString = typeof url === "string" ? url : url.url;
+          const urlName = typeof url === "string" ? url : url.name;
+
+          if (urlString.includes("contact")) {
+            return (
+              <form
+                key={urlString}
+                action={"/" + urlString}
+                method="POST"
+                onSubmit={(e) => handleFakeSubmit(e, urlString)}
+              >
+                <input name="email" placeholder="Enter your email" />
+                <input name="message" placeholder="Enter your message" />
+                <button type="submit">Submit</button>
+              </form>
+            );
+          }
+          if (urlString.includes("login")) {
+            return (
+              <div key={urlString} className="flex flex-col gap-2">
+                <form action={"/" + urlString} method="POST" onSubmit={(e) => handleFakeSubmit(e, urlString)}>
+                  <input name="username" placeholder="Enter your username" />
+                  <input name="email" placeholder="Enter your email" />
+                  <input name="password" type="password" placeholder="Enter your password" />
+                  <button type="submit">Submit</button>
+                </form>
+                {errors[urlString] && <p className="text-red-600 text-sm">{errors[urlString]}</p>}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+
+      <footer className="honeypot-stealth">
+        {HONEYPOT_URLS.map((url) => {
+          const urlString = typeof url === "string" ? url : url.url;
+          const urlName = typeof url === "string" ? url : url.name;
+          return (
+            <a key={urlString} href={"/" + urlString}>
+              {urlName}
+            </a>
+          );
+        })}
+      </footer>
     </main>
   );
 }
